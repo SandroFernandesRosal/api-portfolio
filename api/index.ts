@@ -1,7 +1,8 @@
-const Fastify = require('fastify')
-const cors = require('@fastify/cors')
-const cookie = require('@fastify/cookie')
-const helmet = require('@fastify/helmet')
+import 'dotenv/config'
+import Fastify from 'fastify'
+import cors from '@fastify/cors'
+import cookie from '@fastify/cookie'
+import helmet from '@fastify/helmet'
 
 const app = Fastify({
   logger: false
@@ -33,7 +34,7 @@ async function buildApp() {
 
 const fastifyApp = buildApp()
 
-module.exports = async (req, res) => {
+export default async (req: any, res: any) => {
   const app = await fastifyApp
   return app.ready().then(() => app.server.emit('request', req, res))
 }
