@@ -14,8 +14,8 @@ export async function uploadToCloudinary(
   buffer: Buffer,
   folder: string = 'portfolio',
   options: {
-    width?: number
-    height?: number
+    width?: number | undefined
+    height?: number | undefined
     crop?: string
     quality?: string
     format?: string

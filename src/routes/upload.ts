@@ -3,6 +3,13 @@ import { uploadToCloudinary } from '../utils/upload'
 import { uploadSchema, UploadResponse } from '../schemas/upload'
 import { authenticateToken } from '../middleware/auth'
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    file(): Promise<any>
+    files(): AsyncIterable<any>
+  }
+}
+
 export async function uploadRoutes(app: FastifyInstance) {
   // Register multipart support
   await app.register(require('@fastify/multipart'), {
@@ -55,7 +62,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       } as UploadResponse)
 
     } catch (error) {
-      app.log.error('Upload error:', error)
+      app.log.error(error as Error)
       
       if (error instanceof Error && error.name === 'ZodError') {
         return reply.status(400).send({
@@ -113,7 +120,7 @@ export async function uploadRoutes(app: FastifyInstance) {
           })
 
         } catch (error) {
-          app.log.error(`Error uploading ${file.filename}:`, error)
+          app.log.error(error as Error)
           errors.push({
             filename: file.filename,
             error: 'Erro durante o upload'
@@ -128,7 +135,7 @@ export async function uploadRoutes(app: FastifyInstance) {
       })
 
     } catch (error) {
-      app.log.error('Multiple upload error:', error)
+      app.log.error(error as Error)
       
       if (error instanceof Error && error.name === 'ZodError') {
         return reply.status(400).send({
