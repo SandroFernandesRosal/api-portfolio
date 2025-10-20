@@ -1,20 +1,23 @@
-import 'dotenv/config'
-import Fastify from 'fastify'
+import { VercelRequest, VercelResponse } from '@vercel/node'
 
-const app = Fastify({
-  logger: false
-})
+export default (req: VercelRequest, res: VercelResponse) => {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
-// Simple health check
-app.get('/health', async () => {
-  return { status: 'ok', timestamp: new Date().toISOString() }
-})
+  if (req.method === 'OPTIONS') {
+    res.status(200).end()
+    return
+  }
 
-// Simple test route
-app.get('/test', async () => {
-  return { message: 'API is working!' }
-})
+  if (req.url === '/health') {
+    return res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  }
 
-export default async (req: any, res: any) => {
-  return app.ready().then(() => app.server.emit('request', req, res))
+  if (req.url === '/test') {
+    return res.json({ message: 'API is working!' })
+  }
+
+  return res.status(404).json({ message: 'Not found' })
 }
