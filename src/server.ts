@@ -12,7 +12,7 @@ const app = Fastify({
   }
 })
 
-async function start() {
+async function buildApp() {
   try {
     // Register plugins
     await app.register(helmet, {
@@ -32,7 +32,7 @@ async function start() {
 
     // Register routes
     await app.register(authRoutes, { prefix: '/auth' })
-    await app.register(projectRoutes, { prefix: '/products' })
+    await app.register(projectRoutes, { prefix: '/projects' })
     await app.register(uploadRoutes, { prefix: '/upload' })
 
     // Health check
@@ -40,18 +40,33 @@ async function start() {
       return { status: 'ok', timestamp: new Date().toISOString() }
     })
 
-    // Start server
+    return app
+  } catch (err) {
+    app.log.error(err)
+    throw err
+  }
+}
+
+// For Vercel
+const fastifyApp = buildApp()
+
+export default async (req: any, res: any) => {
+  const app = await fastifyApp
+  return app.ready().then(() => app.server.emit('request', req, res))
+}
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  async function start() {
+    const app = await fastifyApp
+    
     const port = Number(process.env.PORT) || 3333
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'
+    const host = 'localhost'
 
     await app.listen({ port, host })
     
     console.log(`🚀 Server running on http://${host}:${port}`)
-    
-  } catch (err) {
-    app.log.error(err)
-    process.exit(1)
   }
-}
 
-start()
+  start()
+}

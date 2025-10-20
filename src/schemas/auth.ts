@@ -15,3 +15,4 @@ export const userSchema = z.object({
 
 export type LoginRequest = z.infer<typeof loginSchema>
 export type UserResponse = z.infer<typeof userSchema>
+

@@ -39,3 +39,4 @@ export type Project = z.infer<typeof projectSchema>
 export type CreateProjectRequest = z.infer<typeof createProjectSchema>
 export type UpdateProjectRequest = z.infer<typeof updateProjectSchema>
 export type SearchProjectsRequest = z.infer<typeof searchProjectsSchema>
+

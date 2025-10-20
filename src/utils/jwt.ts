@@ -10,3 +10,4 @@ export function generateToken(payload: JWTPayload): string {
 export function verifyToken(token: string): JWTPayload {
   return jwt.verify(token, JWT_SECRET) as JWTPayload
 }
+

@@ -83,16 +83,16 @@ Retorna dados do usuário logado (requer autenticação)
 
 ### Projetos
 
-#### GET /products
+#### GET /projects
 Retorna todos os projetos
 
-#### GET /products/featured
+#### GET /projects/featured
 Retorna apenas projetos em destaque
 
-#### GET /products/search?q=query
+#### GET /projects/search?q=query
 Busca projetos por título ou descrição
 
-#### GET /products/:slug
+#### GET /projects/:slug
 Retorna projeto específico por slug
 
 ### Upload
