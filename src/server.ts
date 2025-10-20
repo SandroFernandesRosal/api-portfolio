@@ -48,7 +48,6 @@ async function start() {
     
     console.log(`🚀 Server running on http://${host}:${port}`)
     
-    
   } catch (err) {
     app.log.error(err)
     process.exit(1)
