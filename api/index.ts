@@ -1,15 +1,14 @@
+import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
 import helmet from '@fastify/helmet'
-import { authRoutes } from './routes/auth'
-import { projectRoutes } from './routes/projects'
-import { uploadRoutes } from './routes/upload'
+import { authRoutes } from '../src/routes/auth'
+import { projectRoutes } from '../src/routes/projects'
+import { uploadRoutes } from '../src/routes/upload'
 
 const app = Fastify({
-  logger: {
-    level: 'error'
-  }
+  logger: false // Desabilita logger no Vercel
 })
 
 async function buildApp() {
@@ -42,26 +41,15 @@ async function buildApp() {
 
     return app
   } catch (err) {
-    app.log.error(err)
+    console.error('Error building app:', err)
     throw err
   }
 }
 
-async function start() {
-  try {
-    const app = await buildApp()
-    
-    const port = Number(process.env.PORT) || 3333
-    const host = 'localhost'
+// Build app once
+const fastifyApp = buildApp()
 
-    await app.listen({ port, host })
-    
-    console.log(`🚀 Server running on http://${host}:${port}`)
-    
-  } catch (err) {
-    console.error(err)
-    process.exit(1)
-  }
+export default async (req: any, res: any) => {
+  const app = await fastifyApp
+  return app.ready().then(() => app.server.emit('request', req, res))
 }
-
-start()
