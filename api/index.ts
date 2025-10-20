@@ -1,23 +1,55 @@
-import { VercelRequest, VercelResponse } from '@vercel/node'
+import 'dotenv/config'
+import Fastify from 'fastify'
+import cors from '@fastify/cors'
+import cookie from '@fastify/cookie'
+import helmet from '@fastify/helmet'
+import { authRoutes } from '../src/routes/auth'
+import { projectRoutes } from '../src/routes/projects'
+import { uploadRoutes } from '../src/routes/upload'
 
-export default (req: VercelRequest, res: VercelResponse) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+const app = Fastify({
+  logger: false // Desabilita logger no Vercel
+})
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
+async function buildApp() {
+  try {
+    // Register plugins
+    await app.register(helmet, {
+      global: true
+    })
+
+    await app.register(cors, {
+      origin: process.env.NODE_ENV === 'production' 
+        ? ['https://sandrofernandes-dev.vercel.app'] 
+        : ['http://localhost:3000'],
+      credentials: true
+    })
+
+    await app.register(cookie, {
+      secret: process.env.JWT_SECRET || 'your-secret-key'
+    })
+
+    // Register routes
+    await app.register(authRoutes, { prefix: '/auth' })
+    await app.register(projectRoutes, { prefix: '/projects' })
+    await app.register(uploadRoutes, { prefix: '/upload' })
+
+    // Health check
+    app.get('/health', async () => {
+      return { status: 'ok', timestamp: new Date().toISOString() }
+    })
+
+    return app
+  } catch (err) {
+    console.error('Error building app:', err)
+    throw err
   }
+}
 
-  if (req.url === '/health') {
-    return res.json({ status: 'ok', timestamp: new Date().toISOString() })
-  }
+// Build app once
+const fastifyApp = buildApp()
 
-  if (req.url === '/test') {
-    return res.json({ message: 'API is working!' })
-  }
-
-  return res.status(404).json({ message: 'Not found' })
+export default async (req: any, res: any) => {
+  const app = await fastifyApp
+  return app.ready().then(() => app.server.emit('request', req, res))
 }
