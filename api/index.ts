@@ -19,9 +19,7 @@ async function buildApp() {
     })
 
     await app.register(cors, {
-      origin: process.env.NODE_ENV === 'production' 
-        ? ['https://sandrofernandes-dev.vercel.app'] 
-        : ['http://localhost:3000'],
+      origin: ['https://sandrofernandes-dev.vercel.app'],
       credentials: true
     })
 
@@ -35,7 +33,7 @@ async function buildApp() {
     await app.register(uploadRoutes, { prefix: '/upload' })
 
     // Health check
-    app.get('/health', async (request, reply) => {
+    app.get('/health', async () => {
       return { status: 'ok', timestamp: new Date().toISOString() }
     })
 
