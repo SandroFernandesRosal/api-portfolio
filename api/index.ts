@@ -8,12 +8,10 @@ import { projectRoutes } from '../src/routes/projects'
 import { uploadRoutes } from '../src/routes/upload'
 
 const app = Fastify({
-  logger: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug'
-  }
+  logger: false // Desabilita logger no Vercel
 })
 
-async function start() {
+async function buildApp() {
   try {
     // Register plugins
     await app.register(helmet, {
@@ -43,9 +41,15 @@ async function start() {
 
     return app
   } catch (err) {
-    app.log.error(err)
+    console.error('Error building app:', err)
     throw err
   }
 }
 
-export default start
+// Build app once
+const fastifyApp = buildApp()
+
+export default async (req: any, res: any) => {
+  const app = await fastifyApp
+  return app.ready().then(() => app.server.emit('request', req, res))
+}
