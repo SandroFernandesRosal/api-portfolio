@@ -47,6 +47,34 @@ async function buildApp() {
     console.log('🌐 CORS options:', corsOptions)
     await app.register(cors, corsOptions)
 
+    // Adicionar headers CORS manualmente como fallback
+    app.addHook('onRequest', async (request, reply) => {
+      const origin = request.headers.origin
+      const allowedOrigins = [
+        'https://sandrofernandes-dev.vercel.app',
+        'https://api-portfolio-eight.vercel.app',
+        'https://sandrodev.com.br',
+        'https://www.sandrodev.com.br',
+        'https://api.sandrodev.com.br',
+        'http://localhost:3000'
+      ]
+
+      if (origin && allowedOrigins.includes(origin)) {
+        reply.header('Access-Control-Allow-Origin', origin)
+      }
+      
+      reply.header('Access-Control-Allow-Credentials', 'true')
+      reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+      reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie')
+      reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
+      
+      // Handle preflight requests
+      if (request.method === 'OPTIONS') {
+        reply.status(200).send()
+        return
+      }
+    })
+
     await app.register(cookie, {
       secret: process.env.JWT_SECRET || 'your-secret-key'
     })
@@ -64,12 +92,14 @@ async function buildApp() {
 
     // Preflight requests are handled automatically by the CORS plugin
     
-    // Log all requests for debugging
-    app.addHook('onRequest', async (request, reply) => {
-      console.log(`📡 ${request.method} ${request.url}`)
-      console.log('🌐 Origin:', request.headers.origin)
-      console.log('🍪 Cookies:', request.headers.cookie)
-    })
+    // Log all requests for debugging (only in development)
+    if (process.env.NODE_ENV !== 'production') {
+      app.addHook('onRequest', async (request, reply) => {
+        console.log(`📡 ${request.method} ${request.url}`)
+        console.log('🌐 Origin:', request.headers.origin)
+        console.log('🍪 Cookies:', request.headers.cookie)
+      })
+    }
 
     return app
   } catch (err) {
