@@ -6,6 +6,10 @@ export async function authenticateToken(
   reply: FastifyReply
 ) {
   try {
+    console.log('🔍 Checking authentication...')
+    console.log('🍪 Cookies received:', request.cookies)
+    console.log('📋 Headers received:', request.headers)
+    
     // Tentar pegar token do cookie primeiro, depois do header
     let token = request.cookies?.token
     
@@ -17,11 +21,14 @@ export async function authenticateToken(
     }
 
     if (!token) {
+      console.log('❌ No token found in request')
       return reply.status(401).send({ message: 'Token não fornecido' })
     }
 
+    console.log('🔍 Token found, validating...')
     const payload = verifyToken(token)
     request.user = payload
+    console.log('✅ Token validated successfully')
 
     return
   } catch (error) {

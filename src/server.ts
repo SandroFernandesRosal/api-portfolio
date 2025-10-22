@@ -23,10 +23,12 @@ async function buildApp() {
   try {
     // Register plugins
     await app.register(helmet, {
-      global: true
+      global: true,
+      crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: false
     })
 
-    await app.register(cors, {
+    const corsOptions = {
       origin: process.env.NODE_ENV === 'production' 
         ? [
             'https://sandrofernandes-dev.vercel.app',
@@ -36,8 +38,14 @@ async function buildApp() {
             'https://api.sandrodev.com.br'
           ] 
         : ['http://localhost:3000'],
-      credentials: true
-    })
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+      exposedHeaders: ['Set-Cookie']
+    }
+    
+    console.log('🌐 CORS options:', corsOptions)
+    await app.register(cors, corsOptions)
 
     await app.register(cookie, {
       secret: process.env.JWT_SECRET || 'your-secret-key'
@@ -52,6 +60,15 @@ async function buildApp() {
     // Health check
     app.get('/health', async (request, reply) => {
       return { status: 'ok', timestamp: new Date().toISOString() }
+    })
+
+    // Preflight requests are handled automatically by the CORS plugin
+    
+    // Log all requests for debugging
+    app.addHook('onRequest', async (request, reply) => {
+      console.log(`📡 ${request.method} ${request.url}`)
+      console.log('🌐 Origin:', request.headers.origin)
+      console.log('🍪 Cookies:', request.headers.cookie)
     })
 
     return app

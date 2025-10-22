@@ -6,6 +6,7 @@ import helmet from '@fastify/helmet'
 import { authRoutes } from '../src/routes/auth'
 import { projectRoutes } from '../src/routes/projects'
 import { uploadRoutes } from '../src/routes/upload'
+import { contactRoutes } from '../src/routes/contact'
 
 const app = Fastify({
   logger: false // Desabilita logger no Vercel
@@ -15,10 +16,12 @@ async function buildApp() {
   try {
     // Register plugins
     await app.register(helmet, {
-      global: true
+      global: true,
+      crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: false
     })
 
-    await app.register(cors, {
+    const corsOptions = {
       origin: process.env.NODE_ENV === 'production' 
         ? [
             'https://sandrofernandes-dev.vercel.app',
@@ -28,8 +31,13 @@ async function buildApp() {
             'https://api.sandrodev.com.br'
           ] 
         : ['http://localhost:3000'],
-      credentials: true
-    })
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+      exposedHeaders: ['Set-Cookie']
+    }
+    
+    await app.register(cors, corsOptions)
 
     await app.register(cookie, {
       secret: process.env.JWT_SECRET || 'your-secret-key'
@@ -39,6 +47,7 @@ async function buildApp() {
     await app.register(authRoutes, { prefix: '/auth' })
     await app.register(projectRoutes, { prefix: '/projects' })
     await app.register(uploadRoutes, { prefix: '/upload' })
+    await app.register(contactRoutes, { prefix: '/contact' })
 
     // Health check
     app.get('/health', async () => {

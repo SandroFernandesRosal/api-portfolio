@@ -10,13 +10,16 @@ export async function authRoutes(app: FastifyInstance) {
   // Login route
   app.post('/login', async (request, reply) => {
     try {
+      console.log('🔐 Login attempt received')
       const { email, password } = loginSchema.parse(request.body)
+      console.log('📧 Email:', email)
 
       const pool = getPool()
       const userQuery = 'SELECT * FROM users WHERE email = $1'
       const userResult = await pool.query(userQuery, [email])
       
       if (userResult.rows.length === 0) {
+        console.log('❌ User not found')
         return reply.status(401).send({ message: 'Credenciais inválidas' })
       }
 
@@ -41,13 +44,19 @@ export async function authRoutes(app: FastifyInstance) {
       const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none' as const, // Necessário para cross-origin em produção
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
         path: '/',
         maxAge: 4 * 60 * 60 * 1000, // 4 hours
         ...(process.env.NODE_ENV === 'production' && { domain: '.sandrodev.com.br' })
       }
       
+      console.log('🍪 Setting cookie with options:', cookieOptions)
+      console.log('🔐 Token generated:', token.substring(0, 20) + '...')
       reply.setCookie('token', token, cookieOptions)
+      console.log('✅ Cookie set successfully')
+      
+      // Verificar se o cookie foi definido
+      console.log('🍪 Cookies after setting:', reply.getHeader('Set-Cookie'))
 
       return reply.send({
         user: {
