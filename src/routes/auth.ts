@@ -38,13 +38,16 @@ export async function authRoutes(app: FastifyInstance) {
       })
 
       // Set cookie with token
-      reply.setCookie('token', token, {
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // true em produção, false em desenvolvimento
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // none em produção, lax em desenvolvimento
-        path: '/', // Path raiz para funcionar em todas as rotas
-        maxAge: 4 * 60 * 60 * 1000 // 4 hours
-      })
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none' as const, // Necessário para cross-origin em produção
+        path: '/',
+        maxAge: 4 * 60 * 60 * 1000, // 4 hours
+        ...(process.env.NODE_ENV === 'production' && { domain: '.sandrodev.com.br' })
+      }
+      
+      reply.setCookie('token', token, cookieOptions)
 
       return reply.send({
         user: {
