@@ -1,8 +1,6 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
-import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
-import helmet from '@fastify/helmet'
 import { authRoutes } from '../src/routes/auth'
 import { projectRoutes } from '../src/routes/projects'
 import { uploadRoutes } from '../src/routes/upload'
@@ -15,53 +13,23 @@ const app = Fastify({
 async function buildApp() {
   try {
     // Register plugins
-    await app.register(helmet, {
-      global: true,
-      crossOriginEmbedderPolicy: false,
-      contentSecurityPolicy: false
-    })
-
-    const corsOptions = {
-      origin: process.env.NODE_ENV === 'production' 
-        ? [
-            'https://sandrofernandes-dev.vercel.app',
-            'https://api-portfolio-eight.vercel.app',
-            'https://sandrodev.com.br',
-            'https://www.sandrodev.com.br',
-            'https://api.sandrodev.com.br'
-          ] 
-        : ['http://localhost:3000'],
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-      exposedHeaders: ['Set-Cookie']
-    }
-    
-    await app.register(cors, corsOptions)
-
-    // Adicionar headers CORS manualmente como fallback
+    // Configuração CORS simples e direta
     app.addHook('onRequest', async (request, reply) => {
-      const origin = request.headers.origin
-      const allowedOrigins = [
-        'https://sandrofernandes-dev.vercel.app',
-        'https://api-portfolio-eight.vercel.app',
-        'https://sandrodev.com.br',
-        'https://www.sandrodev.com.br',
-        'https://api.sandrodev.com.br',
-        'http://localhost:3000'
-      ]
-
-      if (origin && allowedOrigins.includes(origin)) {
-        reply.header('Access-Control-Allow-Origin', origin)
-      }
+      console.log(`🌐 CORS Hook: ${request.method} ${request.url}`)
+      console.log('🌐 Origin:', request.headers.origin)
       
+      // Permitir todas as origens para teste
+      reply.header('Access-Control-Allow-Origin', '*')
       reply.header('Access-Control-Allow-Credentials', 'true')
       reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
       reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie')
       reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
       
+      console.log('✅ CORS headers set')
+      
       // Handle preflight requests
       if (request.method === 'OPTIONS') {
+        console.log('🔄 Handling OPTIONS request')
         reply.status(200).send()
         return
       }
@@ -80,6 +48,16 @@ async function buildApp() {
     // Health check
     app.get('/health', async () => {
       return { status: 'ok', timestamp: new Date().toISOString() }
+    })
+
+    // Test CORS endpoint
+    app.get('/test-cors', async (request, reply) => {
+      console.log('🧪 Test CORS endpoint called')
+      return { 
+        message: 'CORS is working!', 
+        origin: request.headers.origin,
+        timestamp: new Date().toISOString() 
+      }
     })
 
     return app
