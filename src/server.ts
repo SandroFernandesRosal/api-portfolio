@@ -28,12 +28,7 @@ async function buildApp() {
 
     await app.register(cors, {
       origin: process.env.NODE_ENV === 'production' 
-        ? [
-            'https://sandrofernandes-dev.vercel.app',
-            'https://sandrodev.com.br',
-            'https://www.sandrodev.com.br',
-            'https://api.sandrodev.com.br'
-          ] 
+        ? true // Permite qualquer origem em produção temporariamente
         : ['http://localhost:3000'],
       credentials: true
     })
