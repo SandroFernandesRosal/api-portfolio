@@ -100,3 +100,4 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3333
 5. 🔄 Deploy da API
 6. 🔄 Configurar CORS para produção
 
+

@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify'
-import pool from '../database/connection'
+import getPool from '../database/connection'
 import { generateToken } from '../utils/jwt'
 import { loginSchema } from '../schemas/auth'
 import { authenticateToken } from '../middleware/auth'
-import { hashPassword, comparePassword } from '../utils/password'
+import { comparePassword } from '../utils/password'
 
 export async function authRoutes(app: FastifyInstance) {
 
@@ -12,6 +12,7 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       const { email, password } = loginSchema.parse(request.body)
 
+      const pool = getPool()
       const userQuery = 'SELECT * FROM users WHERE email = $1'
       const userResult = await pool.query(userQuery, [email])
       
@@ -20,8 +21,14 @@ export async function authRoutes(app: FastifyInstance) {
       }
 
       const user = userResult.rows[0]
+      console.log('🔍 User found:', user.email)
+      console.log('🔑 Comparing password...')
+      
       const isValidPassword = await comparePassword(password, user.password)
+      console.log('✅ Password valid:', isValidPassword)
+      
       if (!isValidPassword) {
+        console.log('❌ Invalid password')
         return reply.status(401).send({ message: 'Credenciais inválidas' })
       }
 
@@ -33,9 +40,10 @@ export async function authRoutes(app: FastifyInstance) {
       // Set cookie with token
       reply.setCookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        secure: process.env.NODE_ENV === 'production', // true em produção, false em desenvolvimento
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // none em produção, lax em desenvolvimento
+        path: '/', // Path raiz para funcionar em todas as rotas
+        maxAge: 4 * 60 * 60 * 1000 // 4 hours
       })
 
       return reply.send({
@@ -69,6 +77,7 @@ export async function authRoutes(app: FastifyInstance) {
     preHandler: [authenticateToken]
   }, async (request, reply) => {
     try {
+      const pool = getPool()
       const userQuery = 'SELECT * FROM users WHERE id = $1'
       const userResult = await pool.query(userQuery, [request.user!.userId])
       

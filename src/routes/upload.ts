@@ -14,7 +14,7 @@ export async function uploadRoutes(app: FastifyInstance) {
   // Register multipart support
   await app.register(require('@fastify/multipart'), {
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB limit
+      fileSize: 100 * 1024 * 1024, // 100MB limit for videos
     },
   })
 
@@ -23,6 +23,7 @@ export async function uploadRoutes(app: FastifyInstance) {
     preHandler: [authenticateToken],
   }, async (request, reply) => {
     try {
+
       const data = await request.file()
       
       if (!data) {
@@ -151,6 +152,71 @@ export async function uploadRoutes(app: FastifyInstance) {
     }
   })
 
+  // Upload video
+  app.post('/video', {
+    preHandler: [authenticateToken],
+  }, async (request, reply) => {
+    try {
+      console.log('🎥 Video upload started')
+      const data = await request.file()
+      
+      if (!data) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Nenhum arquivo foi enviado'
+        } as UploadResponse)
+      }
+
+      // Validate file type
+      const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov']
+      if (!allowedTypes.includes(data.mimetype)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Tipo de arquivo não permitido. Use: MP4, WebM, OGG, AVI ou MOV'
+        } as UploadResponse)
+      }
+
+      // Parse query parameters for upload options
+      const options = uploadSchema.parse(request.query)
+      
+      // Convert file to buffer
+      console.log('📁 Converting file to buffer...')
+      const buffer = await data.toBuffer()
+      console.log('📦 Buffer size:', buffer.length, 'bytes')
+      
+      // Upload to Cloudinary
+      console.log('☁️ Uploading to Cloudinary...')
+      const result = await uploadToCloudinary(buffer, options.folder, {
+        resource_type: 'video',
+        width: options.width,
+        height: options.height,
+        crop: options.crop,
+        quality: options.quality,
+        format: options.format,
+      })
+
+      return reply.send({
+        success: true,
+        data: result
+      } as UploadResponse)
+
+    } catch (error) {
+      app.log.error(error as Error)
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          error: 'Parâmetros de upload inválidos'
+        } as UploadResponse)
+      }
+
+      return reply.status(500).send({
+        success: false,
+        error: 'Erro interno do servidor durante o upload do vídeo'
+      } as UploadResponse)
+    }
+  })
+
   // Get upload info (for testing)
   app.get('/info', {
     preHandler: [authenticateToken],
@@ -159,12 +225,13 @@ export async function uploadRoutes(app: FastifyInstance) {
       message: 'Upload service is running',
       limits: {
         maxFileSize: '10MB',
-        allowedTypes: ['JPEG', 'PNG', 'WebP', 'GIF'],
+        allowedTypes: ['JPEG', 'PNG', 'WebP', 'GIF', 'MP4', 'WebM', 'OGG', 'AVI', 'MOV'],
         maxFiles: 'Unlimited (for multiple upload)'
       },
       endpoints: {
-        single: 'POST /upload/image',
-        multiple: 'POST /upload/images'
+        singleImage: 'POST /upload/image',
+        multipleImages: 'POST /upload/images',
+        video: 'POST /upload/video'
       }
     })
   })

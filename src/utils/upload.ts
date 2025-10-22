@@ -1,4 +1,4 @@
-import cloudinary from '../config/cloudinary'
+import configureCloudinary from '../config/cloudinary'
 import { Readable } from 'stream'
 
 export interface UploadResult {
@@ -19,14 +19,20 @@ export async function uploadToCloudinary(
     crop?: string
     quality?: string
     format?: string
+    resource_type?: 'video' | 'auto' | 'image' | 'raw'
   } = {}
 ): Promise<UploadResult> {
+  const cloudinary = configureCloudinary()
+  
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
-        resource_type: 'auto',
-        transformation: {
+        resource_type: options.resource_type || 'auto',
+        transformation: options.resource_type === 'video' ? {
+          quality: 'auto',
+          format: 'mp4',
+        } : {
           width: options.width,
           height: options.height,
           crop: options.crop || 'fill',
@@ -60,6 +66,8 @@ export async function uploadToCloudinary(
 }
 
 export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  const cloudinary = configureCloudinary()
+  
   return new Promise((resolve, reject) => {
     cloudinary.uploader.destroy(publicId, (error, result) => {
       if (error) {

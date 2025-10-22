@@ -7,19 +7,22 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "create-admin": "tsx src/scripts/create-admin.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^9.3.1",
     "@fastify/cors": "^9.0.1",
     "@fastify/helmet": "^11.1.1",
     "@fastify/multipart": "^8.0.0",
-    "@vercel/node": "^3.2.29",
+    "@types/nodemailer": "^7.0.2",
+    "@vercel/node": "^2.3.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
     "dotenv": "^17.2.3",
     "fastify": "^4.24.3",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.9",
     "pg": "^8.11.3",
     "zod": "^3.22.4"
   },

@@ -6,7 +6,15 @@ export async function authenticateToken(
   reply: FastifyReply
 ) {
   try {
-    const token = request.cookies.token
+    // Tentar pegar token do cookie primeiro, depois do header
+    let token = request.cookies?.token
+    
+    if (!token) {
+      const authHeader = request.headers.authorization
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
 
     if (!token) {
       return reply.status(401).send({ message: 'Token não fornecido' })
@@ -17,7 +25,22 @@ export async function authenticateToken(
 
     return
   } catch (error) {
-    return reply.status(401).send({ message: 'Token inválido' })
+    console.log('❌ Token validation failed:', error)
+    
+    // Verificar se é erro de expiração
+    if (error instanceof Error && error.name === 'TokenExpiredError') {
+      return reply.status(401).send({ 
+        message: 'Token expirado', 
+        code: 'TOKEN_EXPIRED',
+        redirect: '/admin/login'
+      })
+    }
+    
+    return reply.status(401).send({ 
+      message: 'Token inválido',
+      code: 'INVALID_TOKEN',
+      redirect: '/admin/login'
+    })
   }
 }
 

@@ -1,3 +1,7 @@
+import dotenv from 'dotenv'
+
+// Carregar variáveis de ambiente
+dotenv.config()
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import cookie from '@fastify/cookie'
@@ -5,11 +9,14 @@ import helmet from '@fastify/helmet'
 import { authRoutes } from './routes/auth'
 import { projectRoutes } from './routes/projects'
 import { uploadRoutes } from './routes/upload'
+import { contactRoutes } from './routes/contact'
 
 const app = Fastify({
   logger: {
     level: 'error'
-  }
+  },
+  requestTimeout: 300000, // 5 minutes timeout for video uploads
+  bodyLimit: 100 * 1024 * 1024 // 100MB body limit
 })
 
 async function buildApp() {
@@ -34,6 +41,7 @@ async function buildApp() {
     await app.register(authRoutes, { prefix: '/auth' })
     await app.register(projectRoutes, { prefix: '/projects' })
     await app.register(uploadRoutes, { prefix: '/upload' })
+    await app.register(contactRoutes, { prefix: '/contact' })
 
     // Health check
     app.get('/health', async (request, reply) => {

@@ -17,6 +17,7 @@ export interface Project {
   page: string
   slug: string
   featured: boolean
+  dateProject: string | null
   createdAt: Date
   updatedAt: Date
   technologies: string[]
