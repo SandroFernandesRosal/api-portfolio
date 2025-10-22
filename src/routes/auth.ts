@@ -13,10 +13,14 @@ export async function authRoutes(app: FastifyInstance) {
       console.log('🔐 Login attempt received')
       const { email, password } = loginSchema.parse(request.body)
       console.log('📧 Email:', email)
+      console.log('🔑 Password length:', password.length)
 
       const pool = getPool()
+      console.log('🗄️ Database pool connected')
       const userQuery = 'SELECT * FROM users WHERE email = $1'
+      console.log('🔍 Querying user with email:', email)
       const userResult = await pool.query(userQuery, [email])
+      console.log('📊 Query result rows:', userResult.rows.length)
       
       if (userResult.rows.length === 0) {
         console.log('❌ User not found')
@@ -41,13 +45,16 @@ export async function authRoutes(app: FastifyInstance) {
       })
 
       // Set cookie with token
-      const cookieOptions = {
+      const cookieOptions: any = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
+        sameSite: 'none' as const, // Sempre none para cross-origin
         path: '/',
         maxAge: 4 * 60 * 60 * 1000, // 4 hours
-        ...(process.env.NODE_ENV === 'production' && { domain: '.sandrodev.com.br' })
+      }
+      
+      if (process.env.NODE_ENV === 'production') {
+        cookieOptions.domain = '.sandrodev.com.br'
       }
       
       console.log('🍪 Setting cookie with options:', cookieOptions)
@@ -57,7 +64,11 @@ export async function authRoutes(app: FastifyInstance) {
       
       // Verificar se o cookie foi definido
       console.log('🍪 Cookies after setting:', reply.getHeader('Set-Cookie'))
+      console.log('🍪 All response headers:', reply.getHeaders())
 
+      // Enviar token no header também para garantir
+      reply.header('Authorization', `Bearer ${token}`)
+      
       return reply.send({
         user: {
           id: user.id,

@@ -17,6 +17,8 @@ async function buildApp() {
     app.addHook('onRequest', async (request, reply) => {
       console.log(`🌐 CORS Hook: ${request.method} ${request.url}`)
       console.log('🌐 Origin:', request.headers.origin)
+      console.log('🍪 Cookies:', request.headers.cookie)
+      console.log('📋 Body:', request.body)
       
       const origin = request.headers.origin
       const allowedOrigins = [
