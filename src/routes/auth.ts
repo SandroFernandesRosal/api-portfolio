@@ -47,7 +47,7 @@ export async function authRoutes(app: FastifyInstance) {
       // Set cookie with token
       const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Sempre true em produção
         sameSite: 'none' as const, // Sempre none para cross-origin
         path: '/',
         maxAge: 4 * 60 * 60 * 1000, // 4 hours

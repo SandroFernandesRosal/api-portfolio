@@ -9,6 +9,8 @@ export async function authenticateToken(
     console.log('🔍 Checking authentication...')
     console.log('🍪 Cookies received:', request.cookies)
     console.log('📋 Headers received:', request.headers)
+    console.log('🌐 Origin:', request.headers.origin)
+    console.log('🔗 Referer:', request.headers.referer)
     
     // Tentar pegar token do cookie primeiro, depois do header
     let token = request.cookies?.token
