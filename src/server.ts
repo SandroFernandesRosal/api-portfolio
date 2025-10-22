@@ -30,6 +30,7 @@ async function buildApp() {
       origin: process.env.NODE_ENV === 'production' 
         ? [
             'https://sandrofernandes-dev.vercel.app',
+            'https://api-portfolio-eight.vercel.app',
             'https://sandrodev.com.br',
             'https://www.sandrodev.com.br',
             'https://api.sandrodev.com.br'
