@@ -45,16 +45,12 @@ export async function authRoutes(app: FastifyInstance) {
       })
 
       // Set cookie with token
-      const cookieOptions: any = {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'none' as const, // Sempre none para cross-origin
         path: '/',
         maxAge: 4 * 60 * 60 * 1000, // 4 hours
-      }
-      
-      if (process.env.NODE_ENV === 'production') {
-        cookieOptions.domain = '.sandrodev.com.br'
       }
       
       console.log('🍪 Setting cookie with options:', cookieOptions)
