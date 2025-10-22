@@ -18,14 +18,26 @@ async function buildApp() {
       console.log(`🌐 CORS Hook: ${request.method} ${request.url}`)
       console.log('🌐 Origin:', request.headers.origin)
       
-      // Permitir todas as origens para teste
-      reply.header('Access-Control-Allow-Origin', '*')
+      const origin = request.headers.origin
+      const allowedOrigins = [
+        'https://sandrodev.com.br',
+        'https://www.sandrodev.com.br',
+        'https://sandrofernandes-dev.vercel.app',
+        'https://api-portfolio-eight.vercel.app',
+        'http://localhost:3000'
+      ]
+      
+      // Definir origem específica para permitir credentials
+      if (origin && allowedOrigins.includes(origin)) {
+        reply.header('Access-Control-Allow-Origin', origin)
+      }
+      
       reply.header('Access-Control-Allow-Credentials', 'true')
       reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
       reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie')
       reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
       
-      console.log('✅ CORS headers set')
+      console.log('✅ CORS headers set for origin:', origin)
       
       // Handle preflight requests
       if (request.method === 'OPTIONS') {
