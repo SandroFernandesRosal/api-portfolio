@@ -15,6 +15,26 @@ export async function authRoutes(app: FastifyInstance) {
       console.log('📧 Email:', email)
       console.log('🔑 Password length:', password.length)
 
+      // Limpar qualquer cookie antigo primeiro
+      reply.clearCookie('token', {
+        path: '/',
+        domain: 'localhost',
+        secure: false,
+        sameSite: 'lax'
+      })
+      reply.clearCookie('token', {
+        path: '/',
+        domain: '.localhost',
+        secure: false,
+        sameSite: 'lax'
+      })
+      reply.clearCookie('token', {
+        path: '/',
+        secure: true,
+        sameSite: 'none'
+      })
+      console.log('🧹 Cleared all old cookies')
+
       const pool = getPool()
       console.log('🗄️ Database pool connected')
       const userQuery = 'SELECT * FROM users WHERE email = $1'
@@ -39,28 +59,39 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.status(401).send({ message: 'Credenciais inválidas' })
       }
 
+      // SEMPRE gerar um novo token a cada login
       const token = generateToken({
         userId: user.id,
         email: user.email
       })
+      console.log('🔄 New token generated for login')
 
-      // Set cookie with token
+      // Set cookie with token - configuração simplificada
       const cookieOptions = {
         httpOnly: true,
-        secure: true, // Sempre true em produção
-        sameSite: 'none' as const, // Sempre none para cross-origin
+        secure: false,
+        sameSite: 'lax' as const,
         path: '/',
-        maxAge: 4 * 60 * 60 * 1000, // 4 hours
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
       }
       
       console.log('🍪 Setting cookie with options:', cookieOptions)
       console.log('🔐 Token generated:', token.substring(0, 20) + '...')
+      
       reply.setCookie('token', token, cookieOptions)
       console.log('✅ Cookie set successfully')
       
       // Verificar se o cookie foi definido
       console.log('🍪 Cookies after setting:', reply.getHeader('Set-Cookie'))
       console.log('🍪 All response headers:', reply.getHeaders())
+      
+      // Testar se o cookie foi realmente definido
+      const setCookieHeader = reply.getHeader('Set-Cookie')
+      if (setCookieHeader) {
+        console.log('✅ Set-Cookie header found:', setCookieHeader)
+      } else {
+        console.log('❌ No Set-Cookie header found!')
+      }
 
       // Enviar token no header também para garantir
       reply.header('Authorization', `Bearer ${token}`)

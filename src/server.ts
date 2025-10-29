@@ -39,8 +39,8 @@ async function buildApp() {
           ] 
         : ['http://localhost:3000'],
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept', 'Origin'],
       exposedHeaders: ['Set-Cookie']
     }
     
@@ -59,17 +59,28 @@ async function buildApp() {
         'http://localhost:3000'
       ]
 
+      console.log('🌐 CORS Request:', {
+        method: request.method,
+        url: request.url,
+        origin: origin,
+        isAllowed: origin && allowedOrigins.includes(origin)
+      })
+
       if (origin && allowedOrigins.includes(origin)) {
         reply.header('Access-Control-Allow-Origin', origin)
+        console.log('✅ CORS Origin allowed:', origin)
+      } else {
+        console.log('❌ CORS Origin not allowed:', origin)
       }
       
       reply.header('Access-Control-Allow-Credentials', 'true')
-      reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie')
+      reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+      reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin')
       reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
       
       // Handle preflight requests
       if (request.method === 'OPTIONS') {
+        console.log('🔄 CORS Preflight request handled')
         reply.status(200).send()
         return
       }

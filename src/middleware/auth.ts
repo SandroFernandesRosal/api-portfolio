@@ -28,22 +28,46 @@ export async function authenticateToken(
     }
 
     console.log('🔍 Token found, validating...')
-    const payload = verifyToken(token)
-    request.user = payload
-    console.log('✅ Token validated successfully')
+    
+    // Verificar se o token está expirado antes de tentar validar
+    try {
+      const payload = verifyToken(token)
+      request.user = payload
+      console.log('✅ Token validated successfully')
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        console.log('🕐 Token expirado detectado, limpando e rejeitando...')
+        // Limpar o cookie expirado
+        reply.clearCookie('token', {
+          path: '/',
+          domain: 'localhost',
+          secure: false,
+          sameSite: 'lax'
+        })
+        reply.clearCookie('token', {
+          path: '/',
+          domain: '.localhost',
+          secure: false,
+          sameSite: 'lax'
+        })
+        reply.clearCookie('token', {
+          path: '/',
+          secure: true,
+          sameSite: 'none'
+        })
+        
+        return reply.status(401).send({ 
+          message: 'Token expirado', 
+          code: 'TOKEN_EXPIRED',
+          redirect: '/admin/login'
+        })
+      }
+      throw error // Re-throw outros erros
+    }
 
     return
   } catch (error) {
     console.log('❌ Token validation failed:', error)
-    
-    // Verificar se é erro de expiração
-    if (error instanceof Error && error.name === 'TokenExpiredError') {
-      return reply.status(401).send({ 
-        message: 'Token expirado', 
-        code: 'TOKEN_EXPIRED',
-        redirect: '/admin/login'
-      })
-    }
     
     return reply.status(401).send({ 
       message: 'Token inválido',
