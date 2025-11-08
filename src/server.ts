@@ -108,7 +108,7 @@ async function buildApp() {
       app.addHook('onRequest', async (request, reply) => {
         console.log(`📡 ${request.method} ${request.url}`)
         console.log('🌐 Origin:', request.headers.origin)
-        console.log('🍪 Cookies:', request.headers.cookie)
+        // Não logar cookies por segurança
       })
     }
 

@@ -15,10 +15,11 @@ async function buildApp() {
     // Register plugins
     // Configuração CORS simples e direta
     app.addHook('onRequest', async (request, reply) => {
-      console.log(`🌐 CORS Hook: ${request.method} ${request.url}`)
-      console.log('🌐 Origin:', request.headers.origin)
-      console.log('🍪 Cookies:', request.headers.cookie)
-      console.log('📋 Body:', request.body)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🌐 CORS Hook: ${request.method} ${request.url}`)
+        console.log('🌐 Origin:', request.headers.origin)
+        // Não logar cookies ou body por segurança
+      }
       
       const origin = request.headers.origin
       const allowedOrigins = [
@@ -39,11 +40,15 @@ async function buildApp() {
       reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie')
       reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
       
-      console.log('✅ CORS headers set for origin:', origin)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ CORS headers set for origin:', origin)
+      }
       
       // Handle preflight requests
       if (request.method === 'OPTIONS') {
-        console.log('🔄 Handling OPTIONS request')
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('🔄 Handling OPTIONS request')
+        }
         reply.status(200).send()
         return
       }

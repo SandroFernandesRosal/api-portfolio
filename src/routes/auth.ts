@@ -10,10 +10,7 @@ export async function authRoutes(app: FastifyInstance) {
   // Login route
   app.post('/login', async (request, reply) => {
     try {
-      console.log('🔐 Login attempt received')
       const { email, password } = loginSchema.parse(request.body)
-      console.log('📧 Email:', email)
-      console.log('🔑 Password length:', password.length)
 
       // Limpar qualquer cookie antigo primeiro
       reply.clearCookie('token', {
@@ -33,29 +30,20 @@ export async function authRoutes(app: FastifyInstance) {
         secure: true,
         sameSite: 'none'
       })
-      console.log('🧹 Cleared all old cookies')
 
       const pool = getPool()
-      console.log('🗄️ Database pool connected')
       const userQuery = 'SELECT * FROM users WHERE email = $1'
-      console.log('🔍 Querying user with email:', email)
       const userResult = await pool.query(userQuery, [email])
-      console.log('📊 Query result rows:', userResult.rows.length)
       
       if (userResult.rows.length === 0) {
-        console.log('❌ User not found')
         return reply.status(401).send({ message: 'Credenciais inválidas' })
       }
 
       const user = userResult.rows[0]
-      console.log('🔍 User found:', user.email)
-      console.log('🔑 Comparing password...')
       
       const isValidPassword = await comparePassword(password, user.password)
-      console.log('✅ Password valid:', isValidPassword)
       
       if (!isValidPassword) {
-        console.log('❌ Invalid password')
         return reply.status(401).send({ message: 'Credenciais inválidas' })
       }
 
@@ -64,7 +52,6 @@ export async function authRoutes(app: FastifyInstance) {
         userId: user.id,
         email: user.email
       })
-      console.log('🔄 New token generated for login')
 
       // Set cookie with token - configuração simplificada
       const cookieOptions = {
@@ -75,23 +62,7 @@ export async function authRoutes(app: FastifyInstance) {
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
       }
       
-      console.log('🍪 Setting cookie with options:', cookieOptions)
-      console.log('🔐 Token generated:', token.substring(0, 20) + '...')
-      
       reply.setCookie('token', token, cookieOptions)
-      console.log('✅ Cookie set successfully')
-      
-      // Verificar se o cookie foi definido
-      console.log('🍪 Cookies after setting:', reply.getHeader('Set-Cookie'))
-      console.log('🍪 All response headers:', reply.getHeaders())
-      
-      // Testar se o cookie foi realmente definido
-      const setCookieHeader = reply.getHeader('Set-Cookie')
-      if (setCookieHeader) {
-        console.log('✅ Set-Cookie header found:', setCookieHeader)
-      } else {
-        console.log('❌ No Set-Cookie header found!')
-      }
 
       // Enviar token no header também para garantir
       reply.header('Authorization', `Bearer ${token}`)
@@ -119,7 +90,27 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Logout route
   app.post('/logout', async (request, reply) => {
-    reply.clearCookie('token')
+    // Limpar cookie com todas as configurações possíveis (mesmas do login)
+    reply.clearCookie('token', {
+      path: '/',
+      domain: 'localhost',
+      secure: false,
+      sameSite: 'lax',
+      httpOnly: true
+    })
+    reply.clearCookie('token', {
+      path: '/',
+      domain: '.localhost',
+      secure: false,
+      sameSite: 'lax',
+      httpOnly: true
+    })
+    reply.clearCookie('token', {
+      path: '/',
+      secure: true,
+      sameSite: 'none',
+      httpOnly: true
+    })
     return reply.send({ message: 'Logout realizado com sucesso' })
   })
 
