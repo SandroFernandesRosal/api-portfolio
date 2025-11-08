@@ -53,11 +53,12 @@ export async function authRoutes(app: FastifyInstance) {
         email: user.email
       })
 
-      // Set cookie with token - configuração simplificada
+      // Set cookie with token - configuração para produção e desenvolvimento
+      const isProduction = process.env.NODE_ENV === 'production'
       const cookieOptions = {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax' as const,
+        secure: isProduction, // true em produção (HTTPS), false em desenvolvimento
+        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax', // 'none' para cross-domain em produção
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
       }
@@ -90,27 +91,35 @@ export async function authRoutes(app: FastifyInstance) {
 
   // Logout route
   app.post('/logout', async (request, reply) => {
-    // Limpar cookie com todas as configurações possíveis (mesmas do login)
-    reply.clearCookie('token', {
-      path: '/',
-      domain: 'localhost',
-      secure: false,
-      sameSite: 'lax',
-      httpOnly: true
-    })
-    reply.clearCookie('token', {
-      path: '/',
-      domain: '.localhost',
-      secure: false,
-      sameSite: 'lax',
-      httpOnly: true
-    })
+    // Limpar cookie com configurações para desenvolvimento e produção
+    const isProduction = process.env.NODE_ENV === 'production'
+    
+    // Limpar cookie de desenvolvimento
+    if (!isProduction) {
+      reply.clearCookie('token', {
+        path: '/',
+        domain: 'localhost',
+        secure: false,
+        sameSite: 'lax',
+        httpOnly: true
+      })
+      reply.clearCookie('token', {
+        path: '/',
+        domain: '.localhost',
+        secure: false,
+        sameSite: 'lax',
+        httpOnly: true
+      })
+    }
+    
+    // Limpar cookie de produção (cross-domain)
     reply.clearCookie('token', {
       path: '/',
       secure: true,
       sameSite: 'none',
       httpOnly: true
     })
+    
     return reply.send({ message: 'Logout realizado com sucesso' })
   })
 
