@@ -13,22 +13,30 @@ export async function authRoutes(app: FastifyInstance) {
       const { email, password } = loginSchema.parse(request.body)
 
       // Limpar qualquer cookie antigo primeiro
-      reply.clearCookie('token', {
-        path: '/',
-        domain: 'localhost',
-        secure: false,
-        sameSite: 'lax'
-      })
-      reply.clearCookie('token', {
-        path: '/',
-        domain: '.localhost',
-        secure: false,
-        sameSite: 'lax'
-      })
+      const isProduction = process.env.NODE_ENV === 'production'
+      
+      if (!isProduction) {
+        // Limpar cookies de desenvolvimento
+        reply.clearCookie('token', {
+          path: '/',
+          domain: 'localhost',
+          secure: false,
+          sameSite: 'lax'
+        })
+        reply.clearCookie('token', {
+          path: '/',
+          domain: '.localhost',
+          secure: false,
+          sameSite: 'lax'
+        })
+      }
+      
+      // Limpar cookie de produção (sem domain para funcionar cross-domain)
       reply.clearCookie('token', {
         path: '/',
         secure: true,
-        sameSite: 'none'
+        sameSite: 'none',
+        httpOnly: true
       })
 
       const pool = getPool()
@@ -54,13 +62,25 @@ export async function authRoutes(app: FastifyInstance) {
       })
 
       // Set cookie with token - configuração para produção e desenvolvimento
-      const isProduction = process.env.NODE_ENV === 'production'
-      const cookieOptions = {
+      const cookieOptions: {
+        httpOnly: boolean
+        secure: boolean
+        sameSite: 'none' | 'lax'
+        path: string
+        maxAge: number
+        domain?: string
+      } = {
         httpOnly: true,
         secure: isProduction, // true em produção (HTTPS), false em desenvolvimento
         sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax', // 'none' para cross-domain em produção
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
+      }
+      
+      // Em produção, não especificar domain para permitir cross-domain
+      // Em desenvolvimento, pode especificar domain se necessário
+      if (!isProduction) {
+        // Opcional: pode adicionar domain para desenvolvimento se necessário
       }
       
       reply.setCookie('token', token, cookieOptions)

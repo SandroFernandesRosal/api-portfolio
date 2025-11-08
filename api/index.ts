@@ -56,11 +56,8 @@ async function buildApp() {
 
     await app.register(cookie, {
       secret: process.env.JWT_SECRET || 'your-secret-key',
-      parseOptions: {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
-      }
+      // parseOptions são apenas para parsing, não para setting
+      // As configurações de cookie são definidas nas rotas
     })
 
     // Register routes
