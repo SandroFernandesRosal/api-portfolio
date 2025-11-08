@@ -12,30 +12,34 @@ export async function authRoutes(app: FastifyInstance) {
     try {
       const { email, password } = loginSchema.parse(request.body)
 
-      // Limpar qualquer cookie antigo primeiro
-      const isProduction = process.env.NODE_ENV === 'production'
+      // Detectar ambiente de produção (Vercel define VERCEL=1)
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
       
-      if (!isProduction) {
-        // Limpar cookies de desenvolvimento
-        reply.clearCookie('token', {
-          path: '/',
-          domain: 'localhost',
-          secure: false,
-          sameSite: 'lax'
-        })
-        reply.clearCookie('token', {
-          path: '/',
-          domain: '.localhost',
-          secure: false,
-          sameSite: 'lax'
-        })
-      }
-      
-      // Limpar cookie de produção (sem domain para funcionar cross-domain)
+      // Limpar cookies antigos com todas as configurações possíveis
+      reply.clearCookie('token', {
+        path: '/',
+        domain: 'localhost',
+        secure: false,
+        sameSite: 'lax',
+        httpOnly: true
+      })
+      reply.clearCookie('token', {
+        path: '/',
+        domain: '.localhost',
+        secure: false,
+        sameSite: 'lax',
+        httpOnly: true
+      })
       reply.clearCookie('token', {
         path: '/',
         secure: true,
         sameSite: 'none',
+        httpOnly: true
+      })
+      reply.clearCookie('token', {
+        path: '/',
+        secure: false,
+        sameSite: 'lax',
         httpOnly: true
       })
 
@@ -62,25 +66,15 @@ export async function authRoutes(app: FastifyInstance) {
       })
 
       // Set cookie with token - configuração para produção e desenvolvimento
-      const cookieOptions: {
-        httpOnly: boolean
-        secure: boolean
-        sameSite: 'none' | 'lax'
-        path: string
-        maxAge: number
-        domain?: string
-      } = {
+      // Em produção: secure=true, sameSite=none (para cross-domain)
+      // Em desenvolvimento: secure=false, sameSite=lax
+      const cookieOptions = {
         httpOnly: true,
-        secure: isProduction, // true em produção (HTTPS), false em desenvolvimento
-        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax', // 'none' para cross-domain em produção
+        secure: isProduction,
+        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias
-      }
-      
-      // Em produção, não especificar domain para permitir cross-domain
-      // Em desenvolvimento, pode especificar domain se necessário
-      if (!isProduction) {
-        // Opcional: pode adicionar domain para desenvolvimento se necessário
+        // Não especificar domain para permitir cross-domain em produção
       }
       
       reply.setCookie('token', token, cookieOptions)
