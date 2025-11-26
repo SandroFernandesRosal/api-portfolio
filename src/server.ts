@@ -59,24 +59,36 @@ async function buildApp() {
         'http://localhost:3000'
       ]
 
+      // Rotas públicas que não precisam de origin (SSR, etc)
+      const publicRoutes = ['/projects', '/contact', '/health']
+      const isPublicRoute = publicRoutes.some(route => request.url.startsWith(route))
+
       console.log('🌐 CORS Request:', {
         method: request.method,
         url: request.url,
         origin: origin,
-        isAllowed: origin && allowedOrigins.includes(origin)
+        isPublicRoute,
+        isAllowed: origin ? allowedOrigins.includes(origin) : isPublicRoute
       })
 
+      // Permitir requisições sem origin apenas para rotas públicas
       if (origin && allowedOrigins.includes(origin)) {
         reply.header('Access-Control-Allow-Origin', origin)
         console.log('✅ CORS Origin allowed:', origin)
-      } else {
+      } else if (!origin && isPublicRoute) {
+        // Permitir requisições sem origin para rotas públicas (SSR do Next.js)
+        console.log('✅ CORS: Public route without origin allowed')
+      } else if (origin) {
         console.log('❌ CORS Origin not allowed:', origin)
       }
       
-      reply.header('Access-Control-Allow-Credentials', 'true')
-      reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-      reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin')
-      reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
+      // Sempre definir headers CORS, mas apenas Allow-Origin quando apropriado
+      if (origin && allowedOrigins.includes(origin)) {
+        reply.header('Access-Control-Allow-Credentials', 'true')
+        reply.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+        reply.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With, Accept, Origin')
+        reply.header('Access-Control-Expose-Headers', 'Set-Cookie')
+      }
       
       // Handle preflight requests
       if (request.method === 'OPTIONS') {

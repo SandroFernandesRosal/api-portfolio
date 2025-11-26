@@ -78,9 +78,6 @@ export async function authRoutes(app: FastifyInstance) {
       }
       
       reply.setCookie('token', token, cookieOptions)
-
-      // Enviar token no header também para garantir
-      reply.header('Authorization', `Bearer ${token}`)
       
       return reply.send({
         user: {
